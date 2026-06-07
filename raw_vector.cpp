@@ -1,13 +1,42 @@
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 //===============================================================================================================================
 template <typename T>
-class vsr_vector {
+class raw_vector {
 
 	char* block;
 
 public:
-	void vsr_push_back(const T& val) {
+//===============================================================================================================================
+	void reserve(size_t new_space) {
+		if (!block) {
+			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_space];
+			*(size_t*)(block) = 0;
+			*(size_t*)(block + sizeof(size_t)) = new_space;
+			T* address = (T*)(block + sizeof(size_t) * 2);
+			return;
+		}
+		if (new_space > *get_space()) {
+			char* temp_block = new char[sizeof(size_t) * 2 + sizeof(T) * new_space];
+			*(size_t*)(temp_block) = *get_size();
+			*(size_t*)(temp_block + sizeof(size_t)) = new_space;
+			T* data = get_data();
+			T* address = (T*)(temp_block + sizeof(size_t) * 2);
+
+			for (size_t i = 0; i < *get_size(); i++, address++)
+				new (address) T(data[i]);
+
+			for (size_t i = 0; i < *get_size(); i++)
+				data[i].~T();
+
+			delete[] block;
+			block = temp_block;
+		}
+	 return;
+	}
+//===============================================================================================================================
+	void push_back(const T& val) {
 		if (!block) {
 			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * 1];
 			*(size_t*)(block) = 0;
@@ -39,7 +68,7 @@ public:
 				if (i == *get_size())
 					new (address) T(val);
 				else
-					new (address) (T)(data[i]);
+					new (address) T(data[i]);
 			}
 			// Вызвали деструктор каждого элемента для старого вектора
 			for (size_t i = 0; i < *get_size(); i++)
@@ -48,16 +77,59 @@ public:
 			delete[] block;
 			// Переназначили указатель вектора на новый блок
 			block = temp_block;
-			// Увеличили size для уже текущего блока(учитывая что добавили новый элемент)
 		}
 		else {
-			T* address = (T*)(block + sizeof(size_t) * 2);
-			new (address) (T)(val);
+			T* address = (T*)(block + sizeof(size_t) * 2) + (*get_size());
+			new (address) T(val);
 			*(size_t*)(block) = (*get_size() + 1);
 		}
 	}
-
-	vsr_vector(size_t capac = 0) {
+//===============================================================================================================================
+	void pop_back() {
+		if (block) {
+			T* raw = &this->back();
+			raw->~T();
+			*(size_t*)(block) = (*get_size() - 1);
+		}
+		else
+			return;
+	}
+//===============================================================================================================================
+	bool empty() const {
+		if (*this->get_size() == 0)
+			return true;
+		else
+			return false;
+}
+//===============================================================================================================================
+	void clear() {
+		if (block) {
+			T* data = get_data();
+			for (size_t i = 0; i < *get_size(); i++)
+				data[i].~T();
+			*(size_t*)(block) = 0;	// Сброс размера вектора в ноль
+		}
+	}
+//===============================================================================================================================
+	T& at(size_t index) {
+		if (index >= (*this->get_size()))
+			throw std::out_of_range("Error, out of range!");
+			
+		T* ptr = this->get_data();
+		return ptr[index];
+	}
+//===============================================================================================================================
+	T& front() {
+		T* ptr = this->get_data();
+		return *ptr;
+	}
+//===============================================================================================================================
+	T& back() {
+		T* raw = this->get_data() + (*this->get_size() - 1 );
+			return *raw;
+	}
+//===============================================================================================================================
+	raw_vector(size_t capac = 0) {
 		if (capac == 0) block = nullptr;
 		else {
 			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * capac];
@@ -65,26 +137,26 @@ public:
 			*get_space() = capac;
 		}
 	}
-
-	size_t* get_size() {
+//===============================================================================================================================
+	size_t* get_size() const {
 		if (block)
 			return (size_t*)block;
 		return nullptr;
 	}
 
-	size_t* get_space() {
+	size_t* get_space() const {
 		if (block)
 			return (size_t*)(block + sizeof(size_t));
 		return nullptr;
 	}
 
-	T* get_data() {
+	T* get_data() const{
 		if (block)
 			return (T*)(block + 2 * sizeof(size_t));
 		return nullptr;
 	}
-
-	~vsr_vector() {
+//===============================================================================================================================
+	~raw_vector() {
 		if (block) {
 			T* data = get_data();	// Указатель на массив данных
 			size_t count = *get_size(); // Количество элементов
@@ -93,16 +165,77 @@ public:
 			delete[] block;
 		}
 	}
+
+	// ПЕРЕГРУЗКИ
+//===============================================================================================================================
+	friend std::ostream& operator<<(std::ostream& os, raw_vector<T>& other) {
+		T* data_this = other.get_data();
+		for (size_t i = 0; i < *(other.get_size()); i++)
+			os << data_this[i] << '\t';
+		return os;
+	}
+//===============================================================================================================================
+	// Копирующее присваивание
+	raw_vector& operator=(const raw_vector& other) {
+		if (this != &other && other.block) {
+			char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * *(other.get_space())];
+
+			T* data = other.get_data();
+			T* data_this = this->get_data();
+
+			*(size_t*)(temp_block) = *(other.get_size());
+			*(size_t*)(temp_block + sizeof(size_t)) = *(other.get_space());
+
+			T* address = (T*)(temp_block + sizeof(size_t) * 2);
+			for (size_t i = 0; i < *(other.get_size()); i++, address++)
+				new (address) (T)(data[i]);
+
+			for (size_t i = 0; i < *(other.get_size()); i++)
+				data_this[i].~T();
+			delete[] this->block;
+
+			this->block = temp_block;
+			return *this;
+		}
+		else return *this;
+	}
+//===============================================================================================================================
+	// Перемещающее присваивание
+	raw_vector& operator=(raw_vector&& other) {
+		if (this != &other) {	// Самоприсваивание
+			delete[] block;
+			block = other.block;
+		}
+		return *this;
+	}
+//===============================================================================================================================
+	T& operator[](const size_t index) {
+		T* ptr_r = this->get_data();
+		return ptr_r[index];
+	}
+	
+	const T& operator[](const size_t index) const{
+		const T* ptr_r = this->get_data();
+		return ptr_r[index];
+	}
+//===============================================================================================================================
+	
+
+
 };
 //===============================================================================================================================
 int main() {
 	{
-		vsr_vector<int> hello;
+		raw_vector<int> hello;
+		raw_vector<int> copy;
+		hello.push_back(213985238);
 
-		hello.vsr_push_back(218);
+		//	copy = hello;
+		//	hello = hello;
 
+		std::cout << hello;
 	}
-	std::cout << sizeof(vsr_vector<int>) << " == " << sizeof(int*) << "\n\n\n";
+	std::cout << sizeof(raw_vector<int>) << " == " << sizeof(int*) << "\n\n\n";
 
 
 
