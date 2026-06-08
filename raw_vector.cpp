@@ -5,9 +5,60 @@
 template <typename T>
 class raw_vector {
 
-	char* block;
+	char* block = nullptr;
 
 public:
+//===============================================================================================================================
+	void insert(const T* iter, const T& val) {
+		if (!block) {
+			if (iter) throw std::out_of_range("Cannot insert element: iterator is out of bounds for an empty vector.");
+			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * 2];
+			*(size_t*)(block) = 1;
+			*(size_t*)(block + sizeof(size_t)) = 2;
+
+			T* address = (T*)(block + sizeof(size_t) * 2);
+			new (address) T(val);
+			return;
+		}
+		else {
+			auto know = iter - begin();
+
+			if (*get_size() + 1 >= *get_space())
+				reserve(*get_size() + 2);
+
+				T* address = begin() + know;
+				T* last = end();
+				T* prev = last - 1;
+
+				new (last) T(*prev);
+				last--;
+				while (last != address) {
+					*last = *(last - 1);
+					last--;
+				}
+				*address = val;
+				*(size_t*)(block) = (*get_size()) + 1;
+		}
+	}
+//===============================================================================================================================
+	void erase(const T* iter) {
+		if (!block)
+			return;
+
+		else {
+			T* address = const_cast<T*>(iter);	// Убираем константность
+			address->~T();						// Удаляем элемент
+			T* next = address + 1;				// Указатель на следующий элемент
+
+			while (next != end()) {
+				*address = *next;
+				address++;
+				next++;
+			}
+			address->~T();
+			*(size_t*)(block) = (*get_size()) - 1;
+		}
+	}
 //===============================================================================================================================
 	void reserve(size_t new_space) {
 		if (!block) {
@@ -33,7 +84,7 @@ public:
 			delete[] block;
 			block = temp_block;
 		}
-	 return;
+		return;
 	}
 //===============================================================================================================================
 	void push_back(const T& val) {
@@ -85,6 +136,67 @@ public:
 		}
 	}
 //===============================================================================================================================
+	void assign(size_t amount, const T& val) {
+		if (!block) {
+			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * amount];
+
+			*(size_t*)(block) = amount;
+			*(size_t*)(block + sizeof(size_t)) = amount;
+
+			T* address = (T*)(block + sizeof(size_t) * 2);
+
+			for (size_t i = 0; i < amount; i++, address++)
+				new (address) T(val);
+
+			return;
+		}
+		else {
+			char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * amount];	// Создали новый блок с пространством под элементы
+
+			*(size_t*)(temp_block) = amount;
+			*(size_t*)(temp_block + sizeof(size_t)) = amount;	// Записали в блоки сайз и спайс == amount
+
+			T* address = (T*)(temp_block + sizeof(size_t) * 2);
+
+			T* data = get_data();
+			for (size_t i = 0; i < amount; i++, address++)
+				new (address) T(val);
+
+			for (size_t i = 0; i < *get_size(); i++)
+				data[i].~T();
+
+			delete[] block;
+			block = temp_block;
+		}
+	}// hello.assign(5, 100);
+//===============================================================================================================================
+	void assign(const T* first, const T* last) {
+		auto differ = last - first;
+		char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * differ];
+
+		*(size_t*)(temp_block) = differ;
+		*(size_t*)(temp_block + sizeof(size_t)) = differ;
+		T* address = (T*)(temp_block + sizeof(size_t) * 2);
+
+		while (first != last) {
+			new (address) T(*first);
+			address++;
+			first++;
+		}
+
+		if (block) {
+			T* data = get_data();
+
+			for (size_t i = 0; i < *get_size(); i++)
+				data[i].~T();
+
+			delete[] block;
+			block = temp_block;
+		}
+		else
+			block = temp_block;
+	}
+//===============================================================================================================================
 	void pop_back() {
 		if (block) {
 			T* raw = &this->back();
@@ -100,7 +212,7 @@ public:
 			return true;
 		else
 			return false;
-}
+	}
 //===============================================================================================================================
 	void clear() {
 		if (block) {
@@ -114,7 +226,7 @@ public:
 	T& at(size_t index) {
 		if (index >= (*this->get_size()))
 			throw std::out_of_range("Error, out of range!");
-			
+
 		T* ptr = this->get_data();
 		return ptr[index];
 	}
@@ -125,8 +237,8 @@ public:
 	}
 //===============================================================================================================================
 	T& back() {
-		T* raw = this->get_data() + (*this->get_size() - 1 );
-			return *raw;
+		T* raw = this->get_data() + (*this->get_size() - 1);
+		return *raw;
 	}
 //===============================================================================================================================
 	raw_vector(size_t capac = 0) {
@@ -136,6 +248,9 @@ public:
 			*get_size() = 0;
 			*get_space() = capac;
 		}
+	}
+	raw_vector(std::initializer_list<T> list) {
+		this->assign(list.begin(), list.end());
 	}
 //===============================================================================================================================
 	size_t* get_size() const {
@@ -150,10 +265,18 @@ public:
 		return nullptr;
 	}
 
-	T* get_data() const{
+	T* get_data() const {
 		if (block)
 			return (T*)(block + 2 * sizeof(size_t));
 		return nullptr;
+	}
+
+	T* begin() const {
+		return (T*)(block + 2 * sizeof(size_t));
+	}
+
+	T* end() const {
+		return (T*)(this->begin() + *this->get_size());
 	}
 //===============================================================================================================================
 	~raw_vector() {
@@ -165,7 +288,6 @@ public:
 			delete[] block;
 		}
 	}
-
 	// ПЕРЕГРУЗКИ
 //===============================================================================================================================
 	friend std::ostream& operator<<(std::ostream& os, raw_vector<T>& other) {
@@ -175,7 +297,7 @@ public:
 		return os;
 	}
 //===============================================================================================================================
-	// Копирующее присваивание
+		// Копирующее присваивание
 	raw_vector& operator=(const raw_vector& other) {
 		if (this != &other && other.block) {
 			char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * *(other.get_space())];
@@ -200,7 +322,7 @@ public:
 		else return *this;
 	}
 //===============================================================================================================================
-	// Перемещающее присваивание
+		// Перемещающее присваивание
 	raw_vector& operator=(raw_vector&& other) {
 		if (this != &other) {	// Самоприсваивание
 			delete[] block;
@@ -213,27 +335,28 @@ public:
 		T* ptr_r = this->get_data();
 		return ptr_r[index];
 	}
-	
-	const T& operator[](const size_t index) const{
+
+	const T& operator[](const size_t index) const {
 		const T* ptr_r = this->get_data();
 		return ptr_r[index];
 	}
 //===============================================================================================================================
-	
+
 
 
 };
 //===============================================================================================================================
 int main() {
 	{
-		raw_vector<int> hello;
+		raw_vector<int> hello = { 213985238, 21, 15 ,23, 14 };
 		raw_vector<int> copy;
-		hello.push_back(213985238);
+
 
 		//	copy = hello;
 		//	hello = hello;
 
-		std::cout << hello;
+		for (const auto& x : hello)
+		std::cout << x << '\n';
 	}
 	std::cout << sizeof(raw_vector<int>) << " == " << sizeof(int*) << "\n\n\n";
 
