@@ -16,8 +16,9 @@ raw-vector
 	
 В разработке:
 
-    resize()
+    resize(), emplace_back(), insert(), erase(), assign(), shrink_to_fir(), swap(), max_size()
     Итераторы (begin(), end())
+	Операторы сравнения
 
 Основано на
 Задание 16 из книги Б. Страуструпа «Язык программирования C++» (глава 19).
