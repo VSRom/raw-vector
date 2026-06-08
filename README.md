@@ -10,16 +10,13 @@ raw-vector
 
 Реализовано:
 
-    Конструктор
-    Деструктор
-    push_back()
+    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve()
+	
+	operator[] /const, <<, =&, =&&
 	
 В разработке:
 
-    pop_back()
-    size(), capacity(), empty()
-    operator[], at(), front(), back()
-    clear(), resize(), reserve()
+    resize()
     Итераторы (begin(), end())
 
 Основано на
