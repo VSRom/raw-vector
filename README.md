@@ -1,5 +1,4 @@
 raw-vector
-Учебная реализация std::vector на C++ с нуля, без использования стандартной библиотеки контейнеров.
 
 Особенности:
 
@@ -10,14 +9,11 @@ raw-vector
 
 Реализовано:
 
-    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve(), assign(iter* a, iter* b), assign(amount, &val), begin(), end(), erase(), insert()
+    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve(), assign(iter* a, iter* b), assign(amount, &val), begin(), end(), erase(), insert(), resize(size), resize(size, val)
 	Итераторы begin(), end()
 	operator[] /const, <<, =(&), =(&&)
 	
 В разработке:
 
-    resize(), emplace_back(), erase(), shrink_to_fir(), swap(), max_size()
+    emplace_back(), erase(), shrink_to_fir(), swap(), max_size()
 	Операторы сравнения
-
-Основано на
-Задание 16 из книги Б. Страуструпа «Язык программирования C++» (глава 19).
