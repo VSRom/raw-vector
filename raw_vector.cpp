@@ -10,10 +10,11 @@ class raw_vector {
 public:
 //===============================================================================================================================
 	void resize(size_t new_size, T& val) {
+
 		if (!block) {
 			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + 1];
 			*(size_t*)(block) = new_size;
-			*(size_t*)(block + sizeof(size_t)) = new_size + 1;
+			*(size_t*)(block + sizeof(size_t)) = new_size + sizeof(T);
 			T* address = (T*)(block + sizeof(size_t) * 2);
 
 			for (size_t i = 0; i < new_size; i++, address++)
@@ -23,9 +24,9 @@ public:
 		}
 		else {
 			if (new_size >= *get_space()) {
-				char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + 1];
+				char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + sizeof(T)];
 				*(size_t*)(temp_block) = new_size;
-				*(size_t*)(temp_block + sizeof(size_t)) = new_size + 1;
+				*(size_t*)(temp_block + sizeof(size_t)) = new_size + sizeof(T);
 				T* address = (T*)(temp_block + sizeof(size_t) * 2);
 				T* data = get_data();
 
@@ -38,12 +39,12 @@ public:
 				for (size_t i = 0; i < *get_size(); i++)
 					data[i].~T();
 
-					delete[] block;
-					block = temp_block;
+				delete[] block;
+				block = temp_block;
 			}
 			else {
 				T* ptr = begin() + *get_size();
-				
+
 				for (size_t i = 0; i < new_size - (*get_size()); i++, ptr++)
 					new (ptr) T(val);
 
@@ -53,17 +54,18 @@ public:
 	}
 //===============================================================================================================================
 	void resize(size_t new_size) {
+
 		if (!block) {
-			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + 1];
+			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size * 2];
 			*(size_t*)(block) = new_size;
-			*(size_t*)(block + sizeof(size_t)) = new_size + 1;
+			*(size_t*)(block + sizeof(size_t)) = new_size * 2;
 			return;
 		}
 		else {
 			if (new_size >= *get_space()) {
-				char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + 1];
+				char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size * 2];
 				*(size_t*)(temp_block) = new_size;
-				*(size_t*)(temp_block + sizeof(size_t)) = new_size + 1;
+				*(size_t*)(temp_block + sizeof(size_t)) = new_size * 2;
 				T* address = (T*)(temp_block + sizeof(size_t) * 2);
 				T* data = get_data();
 
@@ -79,6 +81,16 @@ public:
 				delete[] block;
 				block = temp_block;
 			}
+			else if(new_size < *get_size() ) {
+				// Просто обрезать блок 
+
+				T* ptr_del = begin() + new_size;
+
+				for (size_t i = 0; i < *get_size() - new_size; i++)
+					ptr_del[i].~T();
+
+				*(size_t*)(block) = new_size;
+			}
 			else {
 				T* ptr = begin() + *get_size();
 
@@ -89,7 +101,7 @@ public:
 			}
 		}
 	}
-//===============================================================================================================================
+	//===============================================================================================================================
 	void insert(const T* iter, const T& val) {
 		if (!block) {
 			if (iter) throw std::out_of_range("Cannot insert element: iterator is out of bounds for an empty vector.");
@@ -121,7 +133,7 @@ public:
 			*(size_t*)(block) = (*get_size()) + 1;
 		}
 	}
-	
+
 	void erase(const T* iter) {
 		if (!block)
 			return;
@@ -429,15 +441,19 @@ public:
 //===============================================================================================================================
 int main() {
 	{
-		raw_vector<int> hello = { 213985238, 21, 15 ,23, 14 };
+		raw_vector<int> hello = { 748, 21, 15 ,23, 14 };
 		raw_vector<int> copy;
 
 
 		//	copy = hello;
 		//	hello = hello;
 
-		for (const auto& x : hello)
-			std::cout << x << '\n';
+		//	for (const auto& x : hello)
+		//		std::cout << x << '\n';
+		int a = 420;
+		hello.resize(25);
+		//std::cout << copy << '\n';
+		std::cout << hello << '\n';
 	}
 	std::cout << sizeof(raw_vector<int>) << " == " << sizeof(int*) << "\n\n\n";
 
