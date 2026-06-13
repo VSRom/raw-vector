@@ -9,11 +9,11 @@ raw-vector
 
 Реализовано:
 
-    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve(), assign(iter* a, iter* b), assign(amount, &val), begin(), end(), erase(), insert(), resize(size), resize(size, val)
+    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve(), assign(iter* a, iter* b), assign(amount, &val), begin(), end(), erase(), insert(), resize(size), resize(size, val), emplace_back(), erase(), shrink_to_fir(),
 	Итераторы begin(), end()
 	operator[] /const, <<, =(&), =(&&)
 	
 В разработке:
 
-    emplace_back(), erase(), shrink_to_fir(), swap(), max_size()
+    swap(), max_size()
 	Операторы сравнения
