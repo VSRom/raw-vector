@@ -4,18 +4,18 @@ project(RawVectorTests LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Скачивание стабильного релиза Google Test v1.14.0 по точной прямой ссылке
+# Скачивание стабильного релиза Google Test v1.14.0
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL https://github.com
+  URL "https://github.com"
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-# Собираем тесты из ваших файлов
+# Создаем исполняемый файл тестов с вашими НОВЫМИ именами файлов
 add_executable(run_tests tests.cpp raw_vector.cpp)
 
 # Подключаем встроенный main из gtest
