@@ -13,6 +13,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # Эта строчка заставит сам GitHub Actions идеально скачать Google Test в папку
+        submodules: true
 
     - name: Install Build Tools
       run: |
@@ -20,7 +23,6 @@ jobs:
         sudo apt-get install -y cmake build-essential
 
     - name: Clean and Configure CMake
-      # Команда rm -rf build гарантирует, что мы полностью сотрем старый битый кэш
       run: |
         rm -rf build
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug
