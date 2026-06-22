@@ -10,17 +10,15 @@ raw-vector
 
 Реализовано:
 
-    Конструктор
-    Деструктор
-    push_back()
+   push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve()
+
+	operator[] /const, <<, =&, =&&
 	
 В разработке:
 
-    pop_back()
-    size(), capacity(), empty()
-    operator[], at(), front(), back()
-    clear(), resize(), reserve()
-    Итераторы (begin(), end())
+    resize(), emplace_back(), insert(), erase(), assign(), shrink_to_fir(), swap(), max_size()
+	Итераторы (begin(), end())
+	Операторы сравнения
 
 Основано на
 Задание 16 из книги Б. Страуструпа «Язык программирования C++» (глава 19).
