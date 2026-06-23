@@ -4,3 +4,5 @@
 x64/
 out/
 .vs/
+build/
+*.json
