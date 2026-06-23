@@ -1,34 +1,45 @@
-raw-vector
+# raw-vector
 
-Особенности:
+![CI](https://github.com/VSRom/raw-vector/actions/workflows/ci.yml/badge.svg)
 
-    Минимальный размер: sizeof(my_vector<T>) == sizeof(int*) — весь вектор хранится в одном указателе
-    Сырая память: данные, размер и ёмкость упакованы в единый блок char*
-    Placement new: объекты создаются напрямую в выделенной памяти
-    Автоматическое расширение: ёмкость удваивается при нехватке места
+## Особенности
 
-Реализовано:
+- Размер контейнера равен размеру одного указателя
+- Сырая память: данные, size и capacity упакованы в один `char*` блок
+- Placement new — объекты создаются прямо в выделенной памяти
+- Автоматическое расширение (capacity удваивается при нехватке места)
 
-<<<<<<< HEAD
-   push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve()
+---
 
-	operator[] /const, <<, =&, =&&
-	
-В разработке:
+## Реализовано
 
-    resize(), emplace_back(), insert(), erase(), assign(), shrink_to_fir(), swap(), max_size()
-	Итераторы (begin(), end())
-	Операторы сравнения
+### Конструкторы / деструктор
+- `raw_vector()`
+- `raw_vector(size_t)`
+- `raw_vector(std::initializer_list<T>)`
+- копирующий / перемещающий конструктор
+- деструктор
 
-Основано на
-Задание 16 из книги Б. Страуструпа «Язык программирования C++» (глава 19).
-=======
-    push_back(), pop_back(), get_size(), get_space(), get_data(), empty(), at(), front(), back(), clear(), reserve(), assign(iter* a, iter* b), assign(amount, &val), begin(), end(), erase(), insert(), resize(size), resize(size, val), emplace_back(), erase(), shrink_to_fir(),
-	Итераторы begin(), end()
-	operator[] /const, <<, =(&), =(&&)
-	
-В разработке:
+### Операции
+- `push_back`, `pop_back`
+- `insert`, `erase`
+- `resize`, `reserve`, `assign`
+- `clear`, `empty`
 
-    swap(), max_size()
-	Операторы сравнения
->>>>>>> a921e730ed22883a8fa44a3495b1849dc4810fcd
+### Доступ к элементам
+- `front`, `back`
+- `at`
+- `operator[]`
+- `begin`, `end`
+- `get_size`, `get_space`, `get_data`
+
+---
+
+## В разработке
+
+- `emplace_back`
+- `shrink_to_fit`
+- `swap`
+- `max_size`
+- `cbegin`, `cend`
+- операторы сравнения
