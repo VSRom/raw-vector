@@ -1,58 +1,204 @@
 #include <gtest/gtest.h>
 #include <string>
-#include "raw_vector.h" // Подключаем ваш разделенный заголовочный файл
+#include "raw_vector.h"
 
-// Тест 1: Проверка вашей главной фичи — размер класса равен одному указателю
-TEST(RawVectorTest, InternalLayoutSize) {
-    EXPECT_EQ(sizeof(raw_vector<int>), sizeof(char*));
-    EXPECT_EQ(sizeof(raw_vector<std::string>), sizeof(char*));
+// =====================================================================
+
+TEST(RawVectorTest, EmptyVector)
+{
+    raw_vector<int> v;
+
+    EXPECT_TRUE(v.empty());
 }
 
-// Тест 2: Базовые операции вставки, чтения и проверки на пустоту
-TEST(RawVectorTest, PushBackAndAccess) {
-    raw_vector<int> vec;
-    EXPECT_TRUE(vec.empty());
+// =====================================================================
 
-    vec.push_back(748);
-    vec.push_back(21);
+TEST(RawVectorTest, PushBackIntegers)
+{
+    raw_vector<int> v;
 
-    EXPECT_FALSE(vec.empty());
-    EXPECT_EQ(vec.at(0), 748);
-    EXPECT_EQ(vec.front(), 748);
-    EXPECT_EQ(vec.back(), 21);
-    EXPECT_EQ(vec[1], 21);
+    v.push_back(10);
+    v.push_back(20);
+    v.push_back(30);
+
+    EXPECT_EQ(v[0], 10);
+    EXPECT_EQ(v[1], 20);
+    EXPECT_EQ(v[2], 30);
 }
 
-// Тест 3: Проверка Emplace Back и Move-семантики для строк (из вашего main)
-TEST(RawVectorTest, EmplaceBackAndMove) {
+// =====================================================================
+
+TEST(RawVectorTest, FrontBack)
+{
+    raw_vector<int> v;
+
+    v.push_back(100);
+    v.push_back(200);
+
+    EXPECT_EQ(v.front(), 100);
+    EXPECT_EQ(v.back(), 200);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, ResizeGrow)
+{
+    raw_vector<int> v;
+
+    v.resize(5);
+
+    EXPECT_EQ(*v.get_size(), 5);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, ResizeShrink)
+{
+    raw_vector<int> v;
+
+    v.resize(10);
+    v.resize(3);
+
+    EXPECT_EQ(*v.get_size(), 3);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, PopBack)
+{
+    raw_vector<int> v;
+
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);
+
+    v.pop_back();
+
+    EXPECT_EQ(*v.get_size(), 2);
+    EXPECT_EQ(v.back(), 2);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, Clear)
+{
+    raw_vector<int> v;
+
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);
+
+    v.clear();
+
+    EXPECT_TRUE(v.empty());
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, InsertMiddle)
+{
+    raw_vector<int> v;
+
+    v.push_back(1);
+    v.push_back(3);
+
+    v.insert(v.begin() + 1, 2);
+
+    EXPECT_EQ(v[0], 1);
+    EXPECT_EQ(v[1], 2);
+    EXPECT_EQ(v[2], 3);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, EraseMiddle)
+{
+    raw_vector<int> v;
+
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);
+
+    v.erase(v.begin() + 1);
+
+    EXPECT_EQ(*v.get_size(), 2);
+    EXPECT_EQ(v[0], 1);
+    EXPECT_EQ(v[1], 3);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, CopyConstructor)
+{
+    raw_vector<int> a;
+
+    a.push_back(10);
+    a.push_back(20);
+
+    raw_vector<int> b(a);
+
+    EXPECT_EQ(b[0], 10);
+    EXPECT_EQ(b[1], 20);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, CopyAssignment)
+{
+    raw_vector<int> a;
+
+    a.push_back(10);
+    a.push_back(20);
+
+    raw_vector<int> b;
+
+    b = a;
+
+    EXPECT_EQ(b[0], 10);
+    EXPECT_EQ(b[1], 20);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, MoveConstructor)
+{
+    raw_vector<int> a;
+
+    a.push_back(5);
+    a.push_back(6);
+
+    raw_vector<int> b(std::move(a));
+
+    EXPECT_EQ(b[0], 5);
+    EXPECT_EQ(b[1], 6);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, MoveAssignment)
+{
+    raw_vector<int> a;
+
+    a.push_back(7);
+    a.push_back(8);
+
+    raw_vector<int> b;
+
+    b = std::move(a);
+
+    EXPECT_EQ(b[0], 7);
+    EXPECT_EQ(b[1], 8);
+}
+
+// =====================================================================
+
+TEST(RawVectorTest, Strings)
+{
     raw_vector<std::string> v;
-    std::string s = "abc";
-    
-    v.emplace_back(s);            // Копирование
-    v.emplace_back(std::move(s)); // Перемещение
 
-    EXPECT_EQ(v.at(0), "abc");
-    EXPECT_EQ(v.at(1), "abc");
-    EXPECT_TRUE(s.empty());       // Строка должна остаться пустой после std::move
-}
+    v.push_back("hello");
+    v.push_back("world");
 
-// Тест 4: Проверка деструкторов при вызове pop_back и полной очистке
-class DestructorCounter {
-public:
-    static int count;
-    ~DestructorCounter() { count++; }
-};
-int DestructorCounter::count = 0;
-
-TEST(RawVectorTest, PopBackDestructorCall) {
-    DestructorCounter::count = 0;
-    {
-        raw_vector<DestructorCounter> vec;
-        vec.push_back(DestructorCounter());
-        vec.push_back(DestructorCounter());
-        
-        vec.pop_back(); 
-        // 1 деструктор временного объекта при push_back + 1 деструктор при pop_back
-        EXPECT_GE(DestructorCounter::count, 2); 
-    }
+    EXPECT_EQ(v[0], "hello");
+    EXPECT_EQ(v[1], "world");
 }

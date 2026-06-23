@@ -14,7 +14,7 @@ public:
 		if (!block) {
 			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + 1];
 			*(size_t*)(block) = new_size;
-			*(size_t*)(block + sizeof(size_t)) = new_size + sizeof(T);
+			*(size_t*)(block + sizeof(size_t)) = new_size * 2;
 			T* address = (T*)(block + sizeof(size_t) * 2);
 
 			for (size_t i = 0; i < new_size; i++, address++)
@@ -26,7 +26,7 @@ public:
 			if (new_size >= *get_space()) {
 				char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size + sizeof(T)];
 				*(size_t*)(temp_block) = new_size;
-				*(size_t*)(temp_block + sizeof(size_t)) = new_size + sizeof(T);
+				*(size_t*)(temp_block + sizeof(size_t)) = new_size * 2;
 				T* address = (T*)(temp_block + sizeof(size_t) * 2);
 				T* data = get_data();
 
@@ -56,9 +56,16 @@ public:
 	void resize(size_t new_size) {
 
 		if (!block) {
-			block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * new_size * 2];
+			block = new char[sizeof(size_t) * 2 + sizeof(T) * new_size * 2];
+
 			*(size_t*)(block) = new_size;
 			*(size_t*)(block + sizeof(size_t)) = new_size * 2;
+
+			T* address = (T*)(block + sizeof(size_t) * 2);
+
+			for (size_t i = 0; i < new_size; ++i, ++address)
+				new (address) T();
+
 			return;
 		}
 		else {
@@ -133,24 +140,22 @@ public:
 			*(size_t*)(block) = (*get_size()) + 1;
 		}
 	}
+//===============================================================================================================================
+		void erase(const T* iter) {
 
-	void erase(const T* iter) {
-		if (!block)
+			if (!block)
 			return;
 
-		else {
-			T* address = const_cast<T*>(iter);	// Убираем константность
-			address->~T();						// Удаляем элемент
-			T* next = address + 1;				// Указатель на следующий элемент
+			T* address = const_cast<T*>(iter);
 
-			while (next != end()) {
-				*address = *next;
-				address++;
-				next++;
+			while (address + 1 != end()) {
+				*address = *(address + 1);
+				++address;
 			}
+
 			address->~T();
-			*(size_t*)(block) = (*get_size()) - 1;
-		}
+
+			(*get_size())--;
 	}
 	//===============================================================================================================================
 	void reserve(size_t new_space) {
@@ -301,11 +306,8 @@ public:
 	}
 	//===============================================================================================================================
 	bool empty() const {
-		if (*this->get_size() == 0)
-			return true;
-		else
-			return false;
-	}
+    return block == nullptr || *get_size() == 0;
+}
 	//===============================================================================================================================
 	void clear() {
 		if (block) {
@@ -392,37 +394,83 @@ public:
 	//===============================================================================================================================
 			// Копирующее присваивание
 	raw_vector& operator=(const raw_vector& other) {
-		if (this != &other && other.block) {
-			char* temp_block = new char[sizeof(size_t) + sizeof(size_t) + sizeof(T) * *(other.get_space())];
 
-			T* data = other.get_data();
-			T* data_this = this->get_data();
-
-			*(size_t*)(temp_block) = *(other.get_size());
-			*(size_t*)(temp_block + sizeof(size_t)) = *(other.get_space());
-
-			T* address = (T*)(temp_block + sizeof(size_t) * 2);
-			for (size_t i = 0; i < *(other.get_size()); i++, address++)
-				new (address) (T)(data[i]);
-
-			for (size_t i = 0; i < *(other.get_size()); i++)
-				data_this[i].~T();
-			delete[] this->block;
-
-			this->block = temp_block;
+		if (this == &other)
 			return *this;
+
+		if (block) {
+			T* data = get_data();
+
+			for (size_t i = 0; i < *get_size(); ++i)
+				data[i].~T();
+
+			delete[] block;
 		}
-		else return *this;
+
+		block = nullptr;
+
+		if (!other.block)
+			return *this;
+
+		block = new char[sizeof(size_t) * 2 + sizeof(T) * (*other.get_space())];
+
+		*get_size() = *other.get_size();
+		*get_space() = *other.get_space();
+
+		T* dst = get_data();
+		T* src = other.get_data();
+
+		for (size_t i = 0; i < *other.get_size(); ++i)
+			new (dst + i) T(src[i]);
+
+		return *this;
 	}
 //===============================================================================================================================
 			// Перемещающее присваивание
-	raw_vector& operator=(raw_vector&& other) {
-		if (this != &other) {	// Самоприсваивание
-			delete[] block;
-			block = other.block;
-		}
-		return *this;
-	}
+	raw_vector& operator=(raw_vector&& other) noexcept
+{
+    if (this == &other)
+        return *this;
+
+    if (block) {
+        T* data = get_data();
+
+        for (size_t i = 0; i < *get_size(); ++i)
+            data[i].~T();
+
+        delete[] block;
+    }
+
+    block = other.block;
+    other.block = nullptr;
+
+    return *this;
+}
+	//===============================================================================================================================
+	raw_vector(const raw_vector& other)
+{
+    if (!other.block) {
+        block = nullptr;
+        return;
+    }
+
+    block = new char[sizeof(size_t) * 2 + sizeof(T) * (*other.get_space())];
+
+    *get_size() = *other.get_size();
+    *get_space() = *other.get_space();
+
+    T* dst = get_data();
+    T* src = other.get_data();
+
+    for (size_t i = 0; i < *other.get_size(); ++i)
+        new (dst + i) T(src[i]);
+}
+//===============================================================================================================================
+raw_vector(raw_vector&& other) noexcept
+{
+    block = other.block;
+    other.block = nullptr;
+}
 //===============================================================================================================================
 	T& operator[](const size_t index) {
 		T* ptr_r = this->get_data();

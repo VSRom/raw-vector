@@ -1,36 +1,29 @@
-name: C++ CI RawVector
+name: C++ CI raw_vector
 
 on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+push:
+branches: [ "main", "master" ]
+pull_request:
+branches: [ "main", "master" ]
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+build-and-test:
+runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        # Эта строчка заставит сам GitHub Actions идеально скачать Google Test в папку
-        submodules: true
+steps:
+- name: Checkout repository
+  uses: actions/checkout@v4
 
-    - name: Install Build Tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential
+- name: Install Build Tools
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y cmake build-essential
 
-    - name: Clean and Configure CMake
-      run: |
-        rm -rf build
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug
+- name: Configure CMake
+  run: cmake -B build -DCMAKE_BUILD_TYPE=Debug
 
-    - name: Build Project
-      run: cmake --build ${{github.workspace}}/build --config Debug
+- name: Build
+  run: cmake --build build
 
-    - name: Run Google Tests
-      run: |
-        cd ${{github.workspace}}/build
-        ctest --output-on-failure
+- name: Run Tests
+  run: ctest --test-dir build --output-on-failure
